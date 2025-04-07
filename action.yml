@@ -15,14 +15,16 @@ inputs:
     required: false
     default: 'RU'
 runs:
-  using: 'composite'  # Используем composite action вместо node16
+  using: 'composite'
   steps:
     - name: Install dependencies
       run: npm install
       shell: bash
+      working-directory: ${{ github.action_path }}  # Указываем директорию action
     - name: Run translation check
       run: node check_translations.js
       shell: bash
+      working-directory: ${{ github.action_path }}  # Указываем директорию action
 outputs:
   status:
     description: 'Result of the translation check (success or failure)'
