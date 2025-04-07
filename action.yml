@@ -1,6 +1,6 @@
 name: 'DeepL Translation Verifier'
 description: 'Checks translations in files against DeepL API'
-author: 'S-MpAI' # Замените на ваше имя или никнейм
+author: 'S-MpAI'
 inputs:
   translation-file-patterns:
     description: 'Comma-separated list of file patterns to check'
@@ -15,14 +15,17 @@ inputs:
     required: false
     default: 'RU'
 runs:
-  using: 'node16'
-  main: 'check_translations.js'
-  pre: 'npm install'  # Устанавливает зависимости перед запуском
-
+  using: 'composite'  # Используем composite action вместо node16
+  steps:
+    - name: Install dependencies
+      run: npm install
+      shell: bash
+    - name: Run translation check
+      run: node check_translations.js
+      shell: bash
 outputs:
   status:
     description: 'Result of the translation check (success or failure)'
-
 branding:
-  icon: 'check' # Иконка для action в Marketplace
-  color: 'blue' # Цвет для action в Marketplace
+  icon: 'check'
+  color: 'blue'
