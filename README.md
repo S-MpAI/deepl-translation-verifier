@@ -102,32 +102,33 @@ Example with custom settings:
    node check_translations.js
 ## `.github/workflows/translation-check.yml`
 ```
-name: Check Translations
+name: 🏔 Translations
 
 on:
+  workflow_dispatch:
   push:
     paths:
-      - '*Translations.txt'  # Файлы с переводами
-      - '*.i18n'            # Дополнительные форматы, если используются
+      - '*Translations.txt'
+      - '*.i18n'
 
 jobs:
   check-translations:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Необходимы права на запись для добавления комментариев в файлы
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
       
       - name: Check translations with DeepL
-        uses: S-MpAI/deepl-translation-verifier@v0.0.4  # Указываем версию action
+        uses: S-MpAI/deepl-translation-verifier@v0.0.8  # Обновите на новый тег
         env:
-          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}  # Ключ API DeepL из секретов
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # Токен GitHub для записи в репозиторий
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          translation-file-patterns: 'Translations.txt,.i18n'  # Шаблоны файлов перевода
-          source-lang: 'EN'                                    # Исходный язык
-          target-lang: 'RU'                                    # Целевой язык
+          translation-file-patterns: 'Translations.txt,.i18n'
+          source-lang: 'EN'
+          target-lang: 'RU'
 ```
 
 ## Troubleshooting
