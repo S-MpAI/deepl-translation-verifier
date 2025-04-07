@@ -107,22 +107,27 @@ name: Check Translations
 on:
   push:
     paths:
-      - '*Translations.txt'
-      - '*.i18n'
+      - '*Translations.txt'  # Файлы с переводами
+      - '*.i18n'            # Дополнительные форматы, если используются
 
 jobs:
   check-translations:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Необходимы права на запись для добавления комментариев в файлы
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
       - name: Check translations with DeepL
-        uses: S-MpAI/deepl-translation-verifier@v0.0.4
+        uses: S-MpAI/deepl-translation-verifier@v0.0.4  # Указываем версию action
         env:
-          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}  # Ключ API DeepL из секретов
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # Токен GitHub для записи в репозиторий
         with:
-          translation-file-patterns: 'Translations.txt,.i18n'
-          source-lang: 'EN'
-          target-lang: 'RU'
+          translation-file-patterns: 'Translations.txt,.i18n'  # Шаблоны файлов перевода
+          source-lang: 'EN'                                    # Исходный язык
+          target-lang: 'RU'                                    # Целевой язык
 ```
 
 ## Troubleshooting
