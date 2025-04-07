@@ -1,0 +1,33 @@
+name: 'Translation Checker with DeepL'
+description: 'Checks translations in files against DeepL API'
+author: 'S-MpAI' # Замените на ваше имя или никнейм
+
+# Входные параметры, которые пользователь может настроить
+inputs:
+  translation-file-patterns:
+    description: 'Comma-separated list of file patterns to check (e.g., Translations.txt,.i18n)'
+    required: false
+    default: 'Translations.txt,.i18n'
+  source-lang:
+    description: 'Source language for translations (e.g., EN)'
+    required: false
+    default: 'EN'
+  target-lang:
+    description: 'Target language for translations (e.g., RU)'
+    required: false
+    default: 'RU'
+
+# Выходы (если нужны, сейчас не используются, но можно добавить для будущего)
+outputs:
+  status:
+    description: 'Result of the translation check (success or failure)'
+
+# Логика выполнения
+runs:
+  using: 'node16' # Используем Node.js версии 16
+  main: 'check_translations.js' # Основной скрипт
+
+# Указываем, что требуется Node.js и зависимости
+branding:
+  icon: 'check' # Иконка для action в Marketplace
+  color: 'blue' # Цвет для action в Marketplace
