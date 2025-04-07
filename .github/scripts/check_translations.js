@@ -3,10 +3,12 @@ const github = require('@actions/github');
 const axios = require('axios');
 const fs = require('fs');
 
-// Получаем шаблоны файлов из переменных окружения или используем значения по умолчанию
-const FILE_PATTERNS = (process.env.TRANSLATION_FILE_PATTERNS || 'Translations.txt,.i18n')
+// Получаем параметры из inputs или process.env
+const FILE_PATTERNS = (core.getInput('translation-file-patterns') || process.env.TRANSLATION_FILE_PATTERNS || 'Translations.txt,.i18n')
     .split(',')
     .map(pattern => pattern.trim());
+const SOURCE_LANG = core.getInput('source-lang') || process.env.SOURCE_LANG || 'EN';
+const TARGET_LANG = core.getInput('target-lang') || process.env.TARGET_LANG || 'RU';
 
 async function getDiffForTranslationFiles() {
     const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
@@ -18,7 +20,6 @@ async function getDiffForTranslationFiles() {
         ref: context.sha
     });
     
-    // Фильтруем файлы по заданным шаблонам из process.env
     const translationFiles = commit.data.files.filter(file => 
         FILE_PATTERNS.some(pattern => 
             file.filename.endsWith(pattern) || 
@@ -63,8 +64,8 @@ async function checkTranslationWithDeepL(source, target) {
             {
                 auth_key: apiKey,
                 text: source,
-                source_lang: 'EN',
-                target_lang: 'RU'
+                source_lang: SOURCE_LANG,
+                target_lang: TARGET_LANG
             }
         );
 
@@ -130,6 +131,7 @@ async function main() {
             core.setFailed('Translation check failed');
         } else {
             console.log('All translation files verified successfully!');
+            core.setOutput('status', 'success'); // Устанавливаем выходной параметр
         }
     } catch (error) {
         core.setFailed(`Action failed: ${error.message}`);
