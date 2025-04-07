@@ -43,7 +43,8 @@ function extractTranslations(diff) {
             while ((match = pattern.exec(line.slice(1))) !== null) {
                 translations.push({
                     source: match[1].trim(),
-                    target: match[2].trim()
+                    target: match[2].trim(),
+                    originalLine: line.slice(1) // Сохраняем оригинальную строку
                 });
             }
         }
@@ -82,8 +83,51 @@ async function checkTranslationWithDeepL(source, target) {
     }
 }
 
+async function updateFileWithComments(octokit, context, filename, translationsWithErrors) {
+    // Получаем содержимое файла
+    const { data: fileData } = await octokit.rest.repos.getContent({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        path: filename,
+        ref: context.sha
+    });
+
+    let content = Buffer.from(fileData.content, 'base64').toString('utf8');
+    let updatedContent = content;
+
+    // Добавляем комментарий после каждой ошибочной строки
+    for (const { originalLine, source, target, deeplTranslation } of translationsWithErrors) {
+        const comment = `# Translation error: "${source}" -> Provided: "${target}", Expected: "${deeplTranslation}"`;
+        // Проверяем, есть ли уже комментарий, чтобы не дублировать
+        if (!updatedContent.includes(comment)) {
+            updatedContent = updatedContent.replace(
+                originalLine,
+                `${originalLine}\n${comment}`
+            );
+        }
+    }
+
+    // Если содержимое изменилось, обновляем файл
+    if (updatedContent !== content) {
+        await octokit.rest.repos.createOrUpdateFileContents({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            path: filename,
+            message: `Add translation error comments for ${filename}`,
+            content: Buffer.from(updatedContent).toString('base64'),
+            sha: fileData.sha,
+            branch: context.ref.replace('refs/heads/', '')
+        });
+        console.log(`Updated ${filename} with error comments`);
+    } else {
+        console.log(`No changes needed for ${filename}`);
+    }
+}
+
 async function main() {
     try {
+        const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+        const { context } = github;
         const translationFiles = await getDiffForTranslationFiles();
 
         if (translationFiles.length === 0) {
@@ -96,6 +140,7 @@ async function main() {
         for (const { filename, diff } of translationFiles) {
             console.log(`Checking file: ${filename}`);
             const translations = extractTranslations(diff);
+            const translationsWithErrors = [];
 
             if (translations.length === 0) {
                 console.log(`No new translations found in ${filename}`);
@@ -103,7 +148,8 @@ async function main() {
             }
 
             const errors = [];
-            for (const { source, target } of translations) {
+            for (const translation of translations) {
+                const { source, target, originalLine } = translation;
                 try {
                     const { isCorrect, deeplTranslation } = await checkTranslationWithDeepL(source, target);
                     if (!isCorrect) {
@@ -113,6 +159,7 @@ async function main() {
                             `Provided: ${target}\n` +
                             `DeepL: ${deeplTranslation}`
                         );
+                        translationsWithErrors.push({ originalLine, source, target, deeplTranslation });
                     }
                 } catch (error) {
                     errors.push(`Error checking translation '${source}' in ${filename}: ${error.message}`);
@@ -122,6 +169,7 @@ async function main() {
             if (errors.length > 0) {
                 hasErrors = true;
                 console.log('Errors found:\n' + errors.join('\n\n'));
+                await updateFileWithComments(octokit, context, filename, translationsWithErrors);
             } else {
                 console.log(`All translations in ${filename} verified successfully!`);
             }
@@ -131,7 +179,7 @@ async function main() {
             core.setFailed('Translation check failed');
         } else {
             console.log('All translation files verified successfully!');
-            core.setOutput('status', 'success'); // Устанавливаем выходной параметр
+            core.setOutput('status', 'success');
         }
     } catch (error) {
         core.setFailed(`Action failed: ${error.message}`);
