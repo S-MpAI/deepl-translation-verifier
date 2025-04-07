@@ -1,0 +1,27 @@
+name: Check Translations
+
+on:
+  push:
+    paths:
+      - '*Translations.txt'  # Оставляем как пример, но основная фильтрация теперь в скрипте
+      - '*.i18n'
+
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Install dependencies
+        run: npm install @actions/github @actions/core axios
+      
+      - name: Check translations with DeepL
+        env:
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          TRANSLATION_FILE_PATTERNS: ${{ vars.TRANSLATION_FILE_PATTERNS || 'Translations.txt,.i18n' }}
+        run: node .github/scripts/check_translations.js
