@@ -100,17 +100,30 @@ Example with custom settings:
 
 2. Run locally (for testing, requires `GITHUB_TOKEN` and `DEEPL_API_KEY` in your environment):
    node check_translations.js
+## `.github/workflows/translation-check.yml`
+```
+name: Check Translations
 
-### File Structure
+on:
+  push:
+    paths:
+      - '*Translations.txt'
+      - '*.i18n'
 
-deepl-translation-verifier/
-├── .github/
-│   └── workflows/
-│       └── translation-check.yml
-├── action.yml
-├── check_translations.js
-├── package.json
-└── README.md
+jobs:
+  check-translations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check translations with DeepL
+        uses: S-MpAI/deepl-translation-verifier@v0.0.4
+        env:
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+        with:
+          translation-file-patterns: 'Translations.txt,.i18n'
+          source-lang: 'EN'
+          target-lang: 'RU'
+```
 
 ## Troubleshooting
 
